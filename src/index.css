@@ -1,0 +1,192 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    --cursor-x: 50vw;
+    --cursor-y: 50vh;
+  }
+
+  /* Lenis smooth-scroll recommended styles. */
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+  .lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+  }
+  .lenis.lenis-stopped {
+    overflow: hidden;
+  }
+
+  body {
+    @apply bg-void text-zinc-200 font-sans antialiased;
+    /* Prevent layout shift from the fixed nav / 3D canvas */
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Slim neon scrollbar (WebKit). */
+  ::-webkit-scrollbar { width: 10px; }
+  ::-webkit-scrollbar-track { background: #050505; }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(#22d3ee, #a855f7);
+    border-radius: 999px;
+    border: 2px solid #050505;
+  }
+
+  /* Honour reduced-motion at the platform level too. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  ::selection {
+    @apply bg-neon-purple/40 text-white;
+  }
+
+  /* Hide the native cursor on devices that have the custom one (pointer:fine). */
+  @media (pointer: fine) {
+    body.has-custom-cursor,
+    body.has-custom-cursor a,
+    body.has-custom-cursor button {
+      cursor: none;
+    }
+  }
+}
+
+@layer utilities {
+  /* Spotlight that follows the pointer driven by --cursor-x/y CSS vars. */
+  .spotlight {
+    background: radial-gradient(
+      600px circle at var(--cursor-x) var(--cursor-y),
+      rgba(59, 130, 246, 0.08),
+      transparent 40%
+    );
+  }
+
+  /* Static film grain masks banding on the big gradients, adds texture.
+     Kept static (no animation) so it never repaints during scroll. */
+  .grain::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    pointer-events: none;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Animated conic aurora used behind section headings. */
+  .aurora {
+    background: conic-gradient(
+      from 0deg,
+      #22d3ee,
+      #3b82f6,
+      #a855f7,
+      #7c3aed,
+      #22d3ee
+    );
+    animation: spin-slow 14s linear infinite;
+  }
+
+  .perspective {
+    perspective: 1000px;
+  }
+}
+
+@keyframes grain {
+  0%,
+  100% { transform: translate(0, 0); }
+  20% { transform: translate(-4%, 3%); }
+  40% { transform: translate(3%, -5%); }
+  60% { transform: translate(-2%, 4%); }
+  80% { transform: translate(4%, -2%); }
+}
+
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+@layer components {
+  /* Glassmorphism surface layered: tinted gradient fill, hairline border,
+     soft outer shadow + an inner top highlight that sells the "glass" edge. */
+  .glass {
+    /* Lighter blur (8px) + a more opaque base so it stays readable over the
+       moving 3D background without the browser re-blurring 24px every frame. */
+    @apply relative border border-white/10 backdrop-blur-md;
+    background:
+      linear-gradient(160deg, rgba(20, 22, 30, 0.66), rgba(12, 14, 20, 0.55));
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+
+  /* Stronger frosted panel for hero / nav. */
+  .glass-strong {
+    @apply relative border border-white/15 backdrop-blur-lg;
+    background: linear-gradient(160deg, rgba(22, 24, 32, 0.78), rgba(10, 12, 18, 0.7));
+    box-shadow:
+      0 12px 48px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+
+  /* Neon gradient text. */
+  .text-gradient {
+    @apply bg-neon-gradient bg-clip-text text-transparent;
+  }
+
+  /* Animated shimmering gradient text for hero accents. */
+  .text-shimmer {
+    background: linear-gradient(110deg, #22d3ee, #a855f7, #3b82f6, #22d3ee);
+    background-size: 200% auto;
+    @apply animate-text-shimmer bg-clip-text text-transparent;
+  }
+
+  /* Thin uppercase mono label used as section eyebrows. */
+  .eyebrow {
+    @apply font-mono text-xs uppercase tracking-[0.3em] text-neon-cyan/80;
+  }
+
+  /* Animated underline for links wipes in from the left on hover. */
+  .link-underline {
+    @apply relative;
+  }
+  .link-underline::after {
+    content: '';
+    @apply absolute -bottom-1 left-0 h-px w-full origin-right scale-x-0 bg-neon-gradient transition-transform duration-300;
+  }
+  .link-underline:hover::after {
+    @apply origin-left scale-x-100;
+  }
+}
+
+@layer utilities {
+  /* Per-card pointer spotlight components set --mx/--my on mousemove.
+     Sits inside a `group`, fades in on hover. */
+  .card-spotlight {
+    background: radial-gradient(
+      240px circle at var(--mx, 50%) var(--my, 50%),
+      rgba(34, 211, 238, 0.12),
+      transparent 60%
+    );
+  }
+
+  /* Faint dotted texture for section backdrops. */
+  .bg-dots {
+    background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+}
